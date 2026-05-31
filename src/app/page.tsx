@@ -156,8 +156,9 @@ function LandingPageContent() {
               </button>
             </form>
           </div>
+        </div>
 
-          <div className="pt-8 border-t border-white/10 grid grid-cols-3 gap-8">
+        <div className="pt-8 border-t border-white/10 grid grid-cols-3 gap-8">
             <div className="space-y-2">
               <Shield className="text-blue-500" size={20} />
               <h3 className="font-semibold">Secure</h3>
