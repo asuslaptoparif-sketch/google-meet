@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useWebRTC } from '@/hooks/useWebRTC';
 import VideoGrid from './VideoGrid';
 import Controls from './Controls';
@@ -11,7 +11,9 @@ import { useSocket } from '@/context/SocketContext';
 const Room = () => {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const roomID = params.roomID as string;
+  const userName = searchParams.get('name') || 'Anonymous';
   const { socket } = useSocket();
   
   const {
@@ -20,11 +22,18 @@ const Room = () => {
     toggleAudio,
     toggleVideo,
     shareScreen,
-  } = useWebRTC(roomID);
+  } = useWebRTC(roomID, userName);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'participants'>('chat');
   const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    // If no name is provided in the URL, redirect to landing page to enter name
+    if (!searchParams.get('name')) {
+      router.push(`/?join=${roomID}`);
+    }
+  }, [searchParams, router, roomID]);
 
   useEffect(() => {
     if (!socket) return;
@@ -43,7 +52,7 @@ const Room = () => {
     if (socket) {
       const msgData = {
         text,
-        senderName: 'You',
+        senderName: userName,
         timestamp: new Date().toISOString(),
       };
       socket.emit('send-message', msgData);
@@ -82,7 +91,7 @@ const Room = () => {
       {/* Main Content Area */}
       <div className="flex-1 relative flex overflow-hidden">
         <div className={`flex-1 transition-all duration-500 ease-in-out ${sidebarOpen ? 'mr-80' : 'mr-0'}`}>
-          <VideoGrid peers={peers} localVideoRef={localVideoRef} />
+          <VideoGrid peers={peers} localVideoRef={localVideoRef} localName={userName} />
         </div>
 
         <Sidebar 
@@ -92,6 +101,7 @@ const Room = () => {
           peers={peers}
           messages={messages}
           onSendMessage={handleSendMessage}
+          localName={userName}
         />
       </div>
 

@@ -5,11 +5,12 @@ import RemoteVideo from './RemoteVideo';
 import type Peer from 'simple-peer';
 
 interface VideoGridProps {
-  peers: { peerID: string; peer: Peer.Instance }[];
+  peers: { peerID: string; peerName: string; peer: any }[];
   localVideoRef: React.RefObject<HTMLVideoElement | null>;
+  localName: string;
 }
 
-const VideoGrid: React.FC<VideoGridProps> = ({ peers, localVideoRef }) => {
+const VideoGrid: React.FC<VideoGridProps> = ({ peers, localVideoRef, localName }) => {
   const totalParticipants = peers.length + 1;
 
   const getGridCols = () => {
@@ -33,13 +34,18 @@ const VideoGrid: React.FC<VideoGridProps> = ({ peers, localVideoRef }) => {
         />
         <div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-xs font-medium text-white">
           <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          You (Local)
+          {localName} (You)
         </div>
       </div>
 
       {/* Peer Videos */}
       {peers.map((peerObj) => (
-        <RemoteVideo key={peerObj.peerID} peer={peerObj.peer} peerID={peerObj.peerID} />
+        <RemoteVideo 
+          key={peerObj.peerID} 
+          peer={peerObj.peer} 
+          peerID={peerObj.peerID} 
+          peerName={peerObj.peerName}
+        />
       ))}
     </div>
   );

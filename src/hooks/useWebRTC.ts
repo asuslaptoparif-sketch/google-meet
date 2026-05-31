@@ -6,10 +6,11 @@ import { useSocket } from '@/context/SocketContext';
 
 interface PeerRef {
   peerID: string;
-  peer: Peer.Instance;
+  peerName: string;
+  peer: any;
 }
 
-export const useWebRTC = (roomID: string) => {
+export const useWebRTC = (roomID: string, userName: string) => {
   const { socket } = useSocket();
   const [peers, setPeers] = useState<PeerRef[]>([]);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -17,7 +18,7 @@ export const useWebRTC = (roomID: string) => {
   const peersRef = useRef<PeerRef[]>([]);
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
-  const createPeer = useCallback(async (userToSignal: string, callerID: string, stream: MediaStream) => {
+  const createPeer = useCallback(async (userToSignal: string, callerID: string, callerName: string, stream: MediaStream) => {
     const Peer = (await import('simple-peer')).default;
     const peer = new Peer({
       initiator: true,
@@ -25,8 +26,8 @@ export const useWebRTC = (roomID: string) => {
       stream,
     });
 
-    peer.on('signal', (signal) => {
-      socket?.emit('sending-signal', { userToSignal, callerID, signal });
+    peer.on('signal', (signal: any) => {
+      socket?.emit('sending-signal', { userToSignal, callerID, callerName, signal });
     });
 
     return peer;
@@ -60,25 +61,25 @@ export const useWebRTC = (roomID: string) => {
           localVideoRef.current.srcObject = stream;
         }
 
-        socket.emit('join-room', roomID);
+        socket.emit('join-room', { roomID, userName });
 
         const availableDevices = await navigator.mediaDevices.enumerateDevices();
         setDevices(availableDevices);
 
-        socket.on('all-users', async (users: string[]) => {
+        socket.on('all-users', async (users: { id: string, name: string }[]) => {
           const peers: PeerRef[] = [];
-          for (const userID of users) {
-            const peer = await createPeer(userID, socket.id!, stream);
-            peersRef.current.push({ peerID: userID, peer });
-            peers.push({ peerID: userID, peer });
+          for (const user of users) {
+            const peer = await createPeer(user.id, socket.id!, userName, stream);
+            peersRef.current.push({ peerID: user.id, peerName: user.name, peer });
+            peers.push({ peerID: user.id, peerName: user.name, peer });
           }
           setPeers(peers);
         });
 
-        socket.on('user-joined', async (payload: { signal: any; callerID: string }) => {
+        socket.on('user-joined', async (payload: { signal: any; callerID: string; callerName: string }) => {
           const peer = await addPeer(payload.signal, payload.callerID, stream);
-          peersRef.current.push({ peerID: payload.callerID, peer });
-          setPeers((prev) => [...prev, { peerID: payload.callerID, peer }]);
+          peersRef.current.push({ peerID: payload.callerID, peerName: payload.callerName, peer });
+          setPeers((prev) => [...prev, { peerID: payload.callerID, peerName: payload.callerName, peer }]);
         });
 
         socket.on('receiving-returned-signal', (payload: { signal: Peer.SignalData; id: string }) => {

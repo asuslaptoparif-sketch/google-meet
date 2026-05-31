@@ -8,9 +8,10 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   activeTab: 'chat' | 'participants';
-  peers: { peerID: string }[];
+  peers: { peerID: string; peerName: string }[];
   messages: any[];
   onSendMessage: (text: string) => void;
+  localName: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -19,7 +20,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeTab, 
   peers,
   messages,
-  onSendMessage
+  onSendMessage,
+  localName
 }) => {
   const [inputText, setInputText] = useState('');
 
@@ -58,16 +60,16 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10">
                   <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
-                    Y
+                    {localName.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-white">You (Organizer)</span>
+                  <span className="text-sm font-medium text-white">{localName} (You)</span>
                 </div>
                 {peers.map((peer) => (
                   <div key={peer.peerID} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-zinc-300">
-                      <User size={16} />
+                    <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-white font-bold text-sm">
+                      {peer.peerName.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-sm text-zinc-300">Participant ({peer.peerID.slice(0, 4)})</span>
+                    <span className="text-sm text-zinc-300">{peer.peerName}</span>
                   </div>
                 ))}
               </div>

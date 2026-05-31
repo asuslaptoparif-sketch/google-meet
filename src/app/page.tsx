@@ -1,18 +1,28 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { Video, Mic, MicOff, VideoOff, ArrowRight, Shield, Zap, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function LandingPage() {
+function LandingPageContent() {
   const router = useRouter();
-  const [roomID, setRoomID] = useState('');
+  const searchParams = useSearchParams();
+  const initialRoomID = searchParams.get('join') || '';
+  
+  const [roomID, setRoomID] = useState(initialRoomID);
+  const [userName, setUserName] = useState('');
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    if (initialRoomID) {
+      setRoomID(initialRoomID);
+    }
+  }, [initialRoomID]);
 
   useEffect(() => {
     const getMedia = async () => {
@@ -52,14 +62,22 @@ export default function LandingPage() {
   }, [isVideoOn, isAudioOn]);
 
   const handleCreateRoom = () => {
+    if (!userName.trim()) {
+      alert('Please enter your name first');
+      return;
+    }
     const id = uuidv4();
-    router.push(`/room/${id}`);
+    router.push(`/room/${id}?name=${encodeURIComponent(userName)}`);
   };
 
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userName.trim()) {
+      alert('Please enter your name first');
+      return;
+    }
     if (roomID.trim()) {
-      router.push(`/room/${roomID}`);
+      router.push(`/room/${roomID}?name=${encodeURIComponent(userName)}`);
     }
   };
 
@@ -101,7 +119,19 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="space-y-4">
+            <div className="max-w-md">
+              <label className="block text-sm font-medium text-zinc-500 mb-2 ml-1">Your Display Name</label>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full bg-zinc-900 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-white font-medium"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
             <button 
               onClick={handleCreateRoom}
               className="flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-2xl font-semibold transition-all shadow-lg shadow-blue-500/20"
@@ -194,5 +224,13 @@ export default function LandingPage() {
         </motion.div>
       </main>
     </div>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center text-white">Loading...</div>}>
+      <LandingPageContent />
+    </Suspense>
   );
 }

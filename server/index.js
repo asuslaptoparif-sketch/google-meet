@@ -14,22 +14,25 @@ const io = new Server(server, {
   },
 });
 
-const users = {};
+const users = {}; // roomID -> [{id, name}]
 const socketToRoom = {};
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join-room', (roomID) => {
+  socket.on('join-room', (data) => {
+    const { roomID, userName } = data;
+    const user = { id: socket.id, name: userName };
+
     if (users[roomID]) {
-      users[roomID].push(socket.id);
+      users[roomID].push(user);
     } else {
-      users[roomID] = [socket.id];
+      users[roomID] = [user];
     }
     socketToRoom[socket.id] = roomID;
-    const usersInThisRoom = users[roomID].filter((id) => id !== socket.id);
+    const usersInThisRoom = users[roomID].filter((u) => u.id !== socket.id);
 
-    console.log(`User ${socket.id} joined room ${roomID}`);
+    console.log(`User ${userName} (${socket.id}) joined room ${roomID}`);
     socket.emit('all-users', usersInThisRoom);
   });
 
@@ -38,6 +41,7 @@ io.on('connection', (socket) => {
     io.to(payload.userToSignal).emit('user-joined', {
       signal: payload.signal,
       callerID: payload.callerID,
+      callerName: payload.callerName,
     });
   });
 
@@ -53,7 +57,7 @@ io.on('connection', (socket) => {
     const roomID = socketToRoom[socket.id];
     let room = users[roomID];
     if (room) {
-      room = room.filter((id) => id !== socket.id);
+      room = room.filter((u) => u.id !== socket.id);
       users[roomID] = room;
       if (room.length === 0) {
         delete users[roomID];
