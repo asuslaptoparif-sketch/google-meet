@@ -1,78 +1,56 @@
-# Vision - Professional Video Calling Platform
+# Vision - Professional Video Calling Platform (Vercel Ready)
 
-Vision is a high-performance, real-time video calling website built with Next.js, WebRTC, and Socket.io. It features a premium, corporate-grade UI/UX designed for seamless communication.
+Vision is a high-performance, real-time video calling website built with Next.js and Agora RTC. It is designed to be hosted entirely on Vercel without the need for external signaling servers.
 
 ## 🏗 System Architecture
 
-The application follows a client-server architecture for signaling and a peer-to-peer architecture for media streams:
+The application uses **Agora RTC** for high-quality, low-latency video and audio communication. By using a managed cloud provider like Agora, the entire application remains "serverless" from your perspective and can be deployed to Vercel in one click.
 
-1.  **Signaling Server (Node.js/Socket.io)**: Acts as a broker to exchange WebRTC offers, answers, and ICE candidates between participants.
-2.  **Frontend (Next.js)**: Manages the UI, local media streams, and WebRTC peer connections using `simple-peer`.
-3.  **Media Flow (WebRTC)**: Once signaling is complete, audio/video data flows directly between users (P2P), ensuring low latency and high quality.
-
-### Folder Structure
-
-```text
-├── server/                 # Signaling Server
-│   └── index.js            # Node.js + Socket.io logic
-├── src/
-│   ├── app/                # Next.js App Router pages
-│   │   ├── room/[id]/      # Meeting Room page
-│   │   └── page.tsx        # Landing/Join page
-│   ├── components/         # UI Components
-│   │   └── Room/           # VideoGrid, Controls, Sidebar, etc.
-│   ├── context/            # Global Socket Context
-│   ├── hooks/              # WebRTC & Media logic (useWebRTC)
-│   └── lib/                # Utilities (Tailwind merge, etc.)
-├── public/                 # Static assets
-└── package.json            # Dependencies & Scripts
-```
+- **Frontend**: Next.js (App Router)
+- **RTC**: Agora RTC SDK
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- npm or yarn
+- An Agora account ([Sign up here](https://console.agora.io/))
 
-### 1. Install Dependencies
+### 1. Setup Environment Variables
 
-Run the following command in the root directory:
+Create a `.env.local` file in the root directory and add your Agora App ID:
+
+```bash
+NEXT_PUBLIC_AGORA_APP_ID=your_agora_app_id_here
+```
+
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Start the Signaling Server
-
-In a new terminal, run:
-
-```bash
-npm run server
-```
-
-The server will start on `http://localhost:8000`.
-
-### 3. Start the Frontend
-
-In another terminal, run:
+### 3. Run Locally
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 🛠 Core Implementation Details
+## 📦 Deployment to Vercel
 
-- **WebRTC Management**: Handled via a custom `useWebRTC` hook that manages peer connections, stream swaps for screen sharing, and device switching.
-- **Dynamic Layout**: The `VideoGrid` component uses a responsive CSS grid that adjusts based on the number of active participants.
-- **Signaling**: Socket.io handles `join-room`, `sending-signal`, and `returning-signal` events to establish P2P connections.
+1. Push your code to a GitHub repository.
+2. Connect your repository to Vercel.
+3. Add `NEXT_PUBLIC_AGORA_APP_ID` as an Environment Variable in the Vercel dashboard.
+4. Deploy!
 
-## 🔒 Production Considerations
+## 🛠 Key Features
 
-For a production-ready deployment, consider:
-
-1.  **STUN/TURN Servers**: Essential for P2P connections to work across different network configurations (firewalls, NATs).
-2.  **SFU (Selective Forwarding Unit)**: For large meetings (10+ participants), a P2P mesh network becomes bandwidth-intensive. Services like **Agora.io**, **Daily.co**, or self-hosted solutions like **Mediasoup** are recommended.
-3.  **Authentication**: Secure room access with JWT or OAuth.
+- **Instant Meetings**: Create unique room IDs instantly.
+- **Hardware Preview**: Test your camera and mic before joining.
+- **Screen Sharing**: Switch between webcam and screen sharing seamlessly.
+- **Responsive Grid**: Dynamic layout that adapts to any number of participants.
+- **Premium UI**: Dark-themed, corporate-grade design using Tailwind and Framer Motion.

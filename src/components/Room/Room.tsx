@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useWebRTC } from '@/hooks/useWebRTC';
+import { useAgora } from '@/hooks/useAgora';
 import VideoGrid from './VideoGrid';
 import Controls from './Controls';
 import Sidebar from './Sidebar';
-import { useSocket } from '@/context/SocketContext';
 
 const Room = () => {
   const params = useParams();
@@ -14,50 +13,37 @@ const Room = () => {
   const searchParams = useSearchParams();
   const roomID = params.roomID as string;
   const userName = searchParams.get('name') || 'Anonymous';
-  const { socket } = useSocket();
   
   const {
-    peers,
-    localVideoRef,
+    localVideoTrack,
+    remoteUsers,
     toggleAudio,
     toggleVideo,
     shareScreen,
-  } = useWebRTC(roomID, userName);
+  } = useAgora(roomID, userName);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'participants'>('chat');
   const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
-    // If no name is provided in the URL, redirect to landing page to enter name
     if (!searchParams.get('name')) {
       router.push(`/?join=${roomID}`);
     }
   }, [searchParams, router, roomID]);
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (data: any) => {
-      setMessages((prev) => [...prev, { ...data, isMe: false }]);
-    };
-
-    socket.on('receive-message', handleMessage);
-    return () => {
-      socket.off('receive-message', handleMessage);
-    };
-  }, [socket]);
-
   const handleSendMessage = (text: string) => {
-    if (socket) {
-      const msgData = {
-        text,
-        senderName: userName,
-        timestamp: new Date().toISOString(),
-      };
-      socket.emit('send-message', msgData);
-      setMessages((prev) => [...prev, { ...msgData, isMe: true }]);
-    }
+    // Agora RTC doesn't handle chat. 
+    // For a full serverless experience on Vercel, 
+    // you could use Agora RTM or a service like Pusher/Ably.
+    console.log("Chat message (not implemented in Agora RTC):", text);
+    const msgData = {
+      text,
+      senderName: userName,
+      timestamp: new Date().toISOString(),
+      isMe: true
+    };
+    setMessages((prev) => [...prev, msgData]);
   };
 
   const handleLeave = () => {
@@ -91,14 +77,18 @@ const Room = () => {
       {/* Main Content Area */}
       <div className="flex-1 relative flex overflow-hidden">
         <div className={`flex-1 transition-all duration-500 ease-in-out ${sidebarOpen ? 'mr-80' : 'mr-0'}`}>
-          <VideoGrid peers={peers} localVideoRef={localVideoRef} localName={userName} />
+          <VideoGrid 
+            remoteUsers={remoteUsers} 
+            localVideoTrack={localVideoTrack} 
+            localName={userName} 
+          />
         </div>
 
         <Sidebar 
           isOpen={sidebarOpen} 
           onClose={() => setSidebarOpen(false)} 
           activeTab={sidebarTab}
-          peers={peers}
+          peers={remoteUsers.map(u => ({ peerID: u.uid.toString(), peerName: u.uid.toString() }))}
           messages={messages}
           onSendMessage={handleSendMessage}
           localName={userName}
