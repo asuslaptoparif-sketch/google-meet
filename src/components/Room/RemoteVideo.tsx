@@ -13,7 +13,7 @@ const RemoteVideo: React.FC<VideoProps> = ({ peer, peerName }) => {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    peer.on('stream', (stream) => {
+    peer.on('stream', (stream: MediaStream) => {
       if (ref.current) {
         ref.current.srcObject = stream;
       }
