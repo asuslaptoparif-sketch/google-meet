@@ -18,7 +18,7 @@ export const useAgora = (roomID: string, userName: string) => {
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   
-  const screenTrackRef = useRef<ILocalVideoTrack | null>(null);
+  const screenTrackRef = useRef<any>(null);
 
   useEffect(() => {
     if (!APP_ID) {
@@ -50,8 +50,6 @@ export const useAgora = (roomID: string, userName: string) => {
       });
 
       try {
-        // In a real app, you should fetch a token from your server
-        // For testing, we use null for the token
         await agoraClient.join(APP_ID, roomID, null, null);
         
         const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
@@ -71,7 +69,13 @@ export const useAgora = (roomID: string, userName: string) => {
     return () => {
       localAudioTrack?.close();
       localVideoTrack?.close();
-      screenTrackRef.current?.close();
+      if (screenTrackRef.current) {
+        if (Array.isArray(screenTrackRef.current)) {
+          screenTrackRef.current.forEach(track => track.close());
+        } else {
+          screenTrackRef.current.close();
+        }
+      }
       client?.leave();
     };
   }, [roomID]);
@@ -97,14 +101,15 @@ export const useAgora = (roomID: string, userName: string) => {
         screenTrackRef.current = screenTrack;
         
         if (localVideoTrack) {
-          await client.unpublish(localVideoTrack);
+          await client.unpublish(localVideoTrack as any);
         }
         
-        await client.publish(screenTrack);
-        setLocalVideoTrack(screenTrack);
+        const trackToPublish = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack;
+        await client.publish(trackToPublish);
+        setLocalVideoTrack(trackToPublish);
         setIsScreenSharing(true);
 
-        screenTrack.on("track-ended", () => {
+        trackToPublish.on("track-ended", () => {
           stopScreenShare();
         });
       } else {
@@ -119,8 +124,18 @@ export const useAgora = (roomID: string, userName: string) => {
     if (!client || !screenTrackRef.current) return;
 
     try {
-      await client.unpublish(screenTrackRef.current);
-      screenTrackRef.current.close();
+      const trackToUnpublish = Array.isArray(screenTrackRef.current) 
+        ? screenTrackRef.current[0] 
+        : screenTrackRef.current;
+
+      await client.unpublish(trackToUnpublish);
+      
+      if (Array.isArray(screenTrackRef.current)) {
+        screenTrackRef.current.forEach(track => track.close());
+      } else {
+        screenTrackRef.current.close();
+      }
+      
       screenTrackRef.current = null;
 
       const videoTrack = await AgoraRTC.createCameraVideoTrack();
